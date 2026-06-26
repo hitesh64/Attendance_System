@@ -145,41 +145,33 @@ elif menu == "📸 Live Attendance":
             file_bytes = np.asarray(bytearray(camera_image.read()), dtype=np.uint8)
             frame = cv2.imdecode(file_bytes, 1)
             
-            # Resize for faster processing
-            small_frame = cv2.resize(frame, (0, 0), fx=0.25, fy=0.25)
-            rgb_small_frame = cv2.cvtColor(small_frame, cv2.COLOR_BGR2RGB)
+            # Use full frame for maximum accuracy since we only process one snapshot now
+            rgb_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
             
-            face_locations = face_recognition.face_locations(rgb_small_frame)
-            face_encodings = face_recognition.face_encodings(rgb_small_frame, face_locations)
-            
-            for (top, right, bottom, left), face_encoding in zip(face_locations, face_encodings):
-                matches = face_recognition.compare_faces(known_encodings, face_encoding, tolerance=0.5)
-                name = "Unknown"
+            with st.spinner("Processing face data..."):
+                face_locations = face_recognition.face_locations(rgb_frame)
+                face_encodings = face_recognition.face_encodings(rgb_frame, face_locations)
                 
-                if True in matches:
-                    first_match_index = matches.index(True)
-                    name = known_names[first_match_index]
-                    
-                    # Mark attendance in DB
-                    success = mark_attendance(name)
-                    if success:
-                        status_placeholder.success(f"✅ Valid User: **{name}**'s today attendance submitted!")
-                    else:
-                        status_placeholder.info(f"ℹ️ Valid User: **{name}** (Attendance already marked for today)")
+                if len(face_locations) == 0:
+                    status_placeholder.error("🚨 No face detected! Please ensure proper lighting and try again.")
                 else:
-                    status_placeholder.error("🚨 Invalid User detected!")
-                
-                # Scale back up face locations
-                top *= 4; right *= 4; bottom *= 4; left *= 4
-                
-                # Draw box and label
-                color = (255, 99, 108) if name != "Unknown" else (0, 0, 255) # BGR colors
-                cv2.rectangle(frame, (left, top), (right, bottom), color, 2)
-                # Add a background rectangle for the text
-                cv2.rectangle(frame, (left, bottom - 30), (right, bottom), color, cv2.FILLED)
-                cv2.putText(frame, name, (left + 6, bottom - 6), cv2.FONT_HERSHEY_DUPLEX, 0.6, (255, 255, 255), 1)
-            
-            st.image(cv2.cvtColor(frame, cv2.COLOR_BGR2RGB), use_container_width=True)
+                    for face_encoding in face_encodings:
+                        matches = face_recognition.compare_faces(known_encodings, face_encoding, tolerance=0.5)
+                        name = "Unknown"
+                        
+                        if True in matches:
+                            first_match_index = matches.index(True)
+                            name = known_names[first_match_index]
+                            
+                            # Mark attendance in DB
+                            success = mark_attendance(name)
+                            if success:
+                                status_placeholder.success(f"✅ Valid User: **{name}**'s today attendance submitted!")
+                                st.balloons()
+                            else:
+                                status_placeholder.info(f"ℹ️ Valid User: **{name}** (Attendance already marked for today)")
+                        else:
+                            status_placeholder.error("🚨 Unknown User! Face not recognized in database.")
 
 elif menu == "📊 Dashboard":
     st.title("📊 Attendance Dashboard")
