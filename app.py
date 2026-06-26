@@ -93,37 +93,39 @@ if menu == "📝 Register User":
         with col1:
             st.write("")
             if st.button("📸 Capture & Register"):
-                if not name or not email or not mobile:
-                    st.error("All fields (Name, Email, Mobile) are required!")
-                elif not re.match(r"[^@]+@[^@]+\.[^@]+", email):
-                    st.error("Invalid Email format!")
-                elif not re.match(r"^\d{10}$", mobile):
-                    st.error("Mobile number must be exactly 10 digits!")
-                else:
-                    with st.spinner("Processing face data..."):
-                        face_locations = face_recognition.face_locations(frame_rgb)
-                        if len(face_locations) > 0:
-                            face_encoding = face_recognition.face_encodings(frame_rgb, face_locations)[0]
-                            
-                            # Check for duplicate face
-                            known_names, known_encodings = get_all_users()
-                            is_duplicate = False
-                            if len(known_encodings) > 0:
-                                matches = face_recognition.compare_faces(known_encodings, face_encoding, tolerance=0.5)
-                                if True in matches:
-                                    match_index = matches.index(True)
-                                    st.error(f"🚨 This face is already registered under the name: **{known_names[match_index]}**")
-                                    is_duplicate = True
-                            
-                            if not is_duplicate:
+                with st.spinner("Scanning face..."):
+                    face_locations = face_recognition.face_locations(frame_rgb)
+                    if len(face_locations) > 0:
+                        face_encoding = face_recognition.face_encodings(frame_rgb, face_locations)[0]
+                        
+                        # Smart Catch: Check for duplicate face BEFORE checking form fields!
+                        known_names, known_encodings = get_all_users()
+                        is_duplicate = False
+                        if len(known_encodings) > 0:
+                            # Use strict tolerance for accurate matching
+                            matches = face_recognition.compare_faces(known_encodings, face_encoding, tolerance=0.45)
+                            if True in matches:
+                                match_index = matches.index(True)
+                                st.error(f"🚨 **ALREADY USER REGISTER!** This face is already in the system as **{known_names[match_index]}**.")
+                                is_duplicate = True
+                        
+                        if not is_duplicate:
+                            # If new face, then demand user details
+                            if not name or not email or not mobile:
+                                st.warning("⚠️ Face is NEW! Please fill all fields (Name, Email, Mobile) to complete registration.")
+                            elif not re.match(r"[^@]+@[^@]+\.[^@]+", email):
+                                st.error("Invalid Email format!")
+                            elif not re.match(r"^\d{10}$", mobile):
+                                st.error("Mobile number must be exactly 10 digits!")
+                            else:
                                 success, msg = register_user(name, email, mobile, face_encoding)
                                 if success:
                                     st.success(f"🎉 User **{name}** registered successfully in database!")
                                     st.balloons()
                                 else:
                                     st.error(msg)
-                        else:
-                            st.error("No face detected. Please try again.")
+                    else:
+                        st.error("🚨 No face detected. Please ensure proper lighting and try again.")
 
 elif menu == "📸 Live Attendance":
     st.title("📸 Live Face-Recognition")
