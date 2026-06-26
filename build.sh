@@ -1,4 +1,5 @@
 #!/bin/bash
+set -e
 # Install cmake (required for dlib-bin)
 pip install cmake
 
