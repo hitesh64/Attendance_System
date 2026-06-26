@@ -17,9 +17,9 @@ st.markdown("""
 <style>
     /* Glassmorphism Sidebar */
     [data-testid="stSidebar"] {
-        background: rgba(30, 33, 48, 0.7) !important;
+        background: rgba(255, 255, 255, 0.7) !important;
         backdrop-filter: blur(15px);
-        border-right: 1px solid rgba(255, 255, 255, 0.1);
+        border-right: 1px solid rgba(0, 0, 0, 0.1);
     }
     
     /* Text Gradient for Headers */
@@ -179,7 +179,7 @@ elif menu == "📸 Live Attendance":
                 cv2.rectangle(frame, (left, bottom - 30), (right, bottom), color, cv2.FILLED)
                 cv2.putText(frame, name, (left + 6, bottom - 6), cv2.FONT_HERSHEY_DUPLEX, 0.6, (255, 255, 255), 1)
             
-            st.image(cv2.cvtColor(frame, cv2.COLOR_BGR2RGB), use_column_width=True)
+            st.image(cv2.cvtColor(frame, cv2.COLOR_BGR2RGB), use_container_width=True)
 
 elif menu == "📊 Dashboard":
     st.title("📊 Attendance Dashboard")
